@@ -2,6 +2,8 @@
 
 == Project Initialisation
 
+Heroku tutorial for creation of a Spring Boot project: https://devcenter.heroku.com/articles/deploying-spring-boot-apps-to-heroku
+
 ----
 spring init -a=inboundgateway-telegram -n=inboundgateway-telegram -g=com.nt.ntuas --build=gradle -d=web -j=1.8 -l=java -b=2.0.2.RELEASE -x inboundgateway-telegram
 ----
@@ -18,4 +20,84 @@ heroku apps:create --region eu --remote staging ntuas-inboundgateway-telegram
 
 ----
 heroku push staging master
+----
+
+== Telegram Bot Initialisation
+
+Telegram developer introduction: https://core.telegram.org/bots#botfather
+
+=== Registering a Telegram bot
+First of all, write to `BotFather`. It’s a bot for managing your bots. Yes, there’s a bot for that.
+Send him “/newbot” command and follow his instructions.
+As the result, you’ll have your bot’s token. Keep it safe — it’s a key to Telegram Bot API.
+
+Each bot is given a unique authentication token when it is created.
+The token looks something like 123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11, but we'll use simply <token> in this document instead.
+You can learn about obtaining tokens and generating new ones in link:https://core.telegram.org/bots#botfather[this document].
+
+==== Bot creation workflow example
+----
+/newbot
+----
+----
+Alright, a new bot. How are we going to call it? Please choose a name for your bot.
+----
+----
+ntuas-bot
+----
+----
+Good. Now let's choose a username for your bot. It must end in `bot`. Like this, for example: TerisBot or tetris_bot.
+----
+----
+NtuasBot
+----
+----
+Done! Congratulations on your new bot. You will find it at t.me/NtuasBot. You can now add a description, about section and profile picture for your bot, see /help for a list of commands. By the way, when you've finished creating your cool bot, ping our Bot Support if you want a better username for it. Just make sure the bot is fully operational before you do this.
+
+Use this token to access the HTTP API:
+123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11
+
+For a description of the Bot API, see this page: https://core.telegram.org/bots/api
+----
+
+=== Add Telegram bot to a group
+
+* Create a Telegram group with your user e.g. `NtuasWorkshop`
+* Add the bot with its username to the group
+
+=== Send messages to the bot
+
+Now messages can be written to the bot.
+
+By default, the bot only receives messages starting with a `/`, which indicates that it is a bot command.
+In order to receive all messages in a group the privacy mode must be disabled. This can be done with the `BotFather` bot with the command `/setprivacy`.
+
+[title=NtuasWorkshop group]
+----
+/hello
+----
+
+The messages, which have been sent to the bot can be queried with the Telegram Api. For a description of the Bot API, see this page: https://core.telegram.org/bots/api
+
+[title=Shell]
+----
+curl -X GET "https://api.telegram.org/bot<token>/getUpdates"
+{"ok":true,"result":[{"update_id":716198116,
+"message":{"message_id":17,"from":{"id":123456789,"is_bot":false,"first_name":"My","last_name":"Name","username":"myname","language_code":"de"},"chat":{"id":-987654321,"title":"NtuasWorkshop","type":"group","all_members_are_administrators":true},"date":1526141440,"text":"/hello","entities":[{"offset":0,"length":6,"type":"bot_command"}]}}]}
+----
+
+==== Let the bot send messages to the group
+
+The bot can send messages to a group or a user by the chat id.
+
+[title=Shell]
+----
+curl -X POST "https://api.telegram.org/bot<token>/sendMessage?chat_id=-987654321&text=Hello"
+{"ok":true,"result":{"message_id":18,"from":{"id":345678912,"is_bot":true,"first_name":"ntuas-bot","username":"NtuasBot"},"chat":{"id":-987654321,"title":"NtuasWorkshop","type":"group","all_members_are_administrators":true},"date":1526141739,"text":"Hello"}}
+----
+
+[title=NtuasWorkshop group]
+----
+ntuas-bot
+Hello
 ----
