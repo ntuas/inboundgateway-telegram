@@ -1,0 +1,5 @@
+inboundgateway:
+  telegram:
+    bot:
+      username: NtuasBot
+      token: test

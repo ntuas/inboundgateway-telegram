@@ -1,4 +1,4 @@
-package com.nt.ntuas.inboundgatewaytelegram;
+package com.nt.ntuas.inboundgateway.telegram;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;

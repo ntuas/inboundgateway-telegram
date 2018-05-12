@@ -101,3 +101,7 @@ curl -X POST "https://api.telegram.org/bot<token>/sendMessage?chat_id=-987654321
 ntuas-bot
 Hello
 ----
+
+== Telegram Spring Boot Starter
+
+https://github.com/rubenlagus/TelegramBots
