@@ -1,0 +1,19 @@
+= NtUAS InboundGateway Telegram
+
+== Project Initialisation
+
+----
+spring init -a=inboundgateway-telegram -n=inboundgateway-telegram -g=com.nt.ntuas --build=gradle -d=web -j=1.8 -l=java -b=2.0.2.RELEASE -x inboundgateway-telegram
+----
+
+----
+git init
+git add .
+git commit -m "Initial commit"
+----
+
+
+
+----
+heroku apps:create --region eu --remote staging ntuas-inboundgateway-telegram
+----
