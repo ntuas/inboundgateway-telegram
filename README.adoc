@@ -12,8 +12,10 @@ git add .
 git commit -m "Initial commit"
 ----
 
-
-
 ----
 heroku apps:create --region eu --remote staging ntuas-inboundgateway-telegram
+----
+
+----
+heroku push staging master
 ----
