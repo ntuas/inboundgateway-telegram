@@ -7,6 +7,8 @@ inboundgateway:
 management:
   endpoints:
     enabled-by-default: false
+    web:
+      base-path: /
   endpoint:
     info:
       enabled: true
