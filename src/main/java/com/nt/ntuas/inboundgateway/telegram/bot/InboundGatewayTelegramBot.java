@@ -9,9 +9,7 @@ import org.telegram.telegrambots.api.methods.send.SendMessage;
 import org.telegram.telegrambots.api.objects.Message;
 import org.telegram.telegrambots.api.objects.Update;
 import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboard;
-import org.telegram.telegrambots.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
-import org.telegram.telegrambots.logging.BotLogger;
 
 @Component
 public class InboundGatewayTelegramBot extends ConfigurableTelegramBot {
@@ -36,6 +34,7 @@ public class InboundGatewayTelegramBot extends ConfigurableTelegramBot {
     }
 
     private void handleIncomingMessage(Message message) throws TelegramApiException {
+        LOGGER.info("Received message from chat " + message.getChatId() + ": " + message.getText());
         sendMessage(message.getChatId(), message.getMessageId(), "You said: " + message.getText(), null);
     }
 
