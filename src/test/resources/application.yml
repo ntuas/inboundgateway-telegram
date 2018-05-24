@@ -3,3 +3,12 @@ inboundgateway:
     bot:
       username: NtuasBot
       token: test
+
+management:
+  endpoints:
+    enabled-by-default: false
+  endpoint:
+    info:
+      enabled: true
+    health:
+      enabled: true
