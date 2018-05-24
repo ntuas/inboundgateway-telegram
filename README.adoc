@@ -105,3 +105,13 @@ Hello
 == Telegram Spring Boot Starter
 
 https://github.com/rubenlagus/TelegramBots
+
+=== Set Environment Variables
+
+Environment variables are set with the Heroku cli. To act as the telegram bot, the username and the bot token must be set.
+
+[title=Shell]
+----
+heroku config:set INBOUNDGATEWAY_TELEGRAM_BOT_USERNAME=<username>
+heroku config:set INBOUNDGATEWAY_TELEGRAM_BOT_TOKEN=<token>
+----
