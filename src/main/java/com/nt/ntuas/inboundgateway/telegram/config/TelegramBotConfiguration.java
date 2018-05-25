@@ -41,11 +41,11 @@ public class TelegramBotConfiguration {
     @PostConstruct
     protected void init() {
         LOGGER.info(telegramBotProperties.toString());
-        ApiContextInitializer.init();
     }
 
     @Bean
     public TelegramBotsApi telegramBotsApi() throws TelegramApiRequestException {
+        ApiContextInitializer.init();
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
         for (LongPollingBot bot : longPollingBots) {
             telegramBotsApi.registerBot(bot);
