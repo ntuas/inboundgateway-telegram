@@ -6,7 +6,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.telegram.telegrambots.ApiContextInitializer;
 import org.telegram.telegrambots.TelegramBotsApi;
 import org.telegram.telegrambots.exceptions.TelegramApiRequestException;
 import org.telegram.telegrambots.generics.LongPollingBot;
@@ -45,7 +44,6 @@ public class TelegramBotConfiguration {
 
     @Bean
     public TelegramBotsApi telegramBotsApi() throws TelegramApiRequestException {
-        ApiContextInitializer.init();
         TelegramBotsApi telegramBotsApi = new TelegramBotsApi();
         for (LongPollingBot bot : longPollingBots) {
             telegramBotsApi.registerBot(bot);
