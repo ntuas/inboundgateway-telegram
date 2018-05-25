@@ -1,3 +1,7 @@
+spring:
+  profiles:
+    active: cloud
+
 management:
   endpoints:
     enabled-by-default: false
@@ -8,3 +12,8 @@ management:
       enabled: true
     health:
       enabled: true
+
+inboundgateway:
+  backend:
+    product:
+      queue: products.manage.queue

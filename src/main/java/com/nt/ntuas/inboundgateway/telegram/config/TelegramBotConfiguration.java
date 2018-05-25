@@ -1,6 +1,6 @@
 package com.nt.ntuas.inboundgateway.telegram.config;
 
-import com.nt.ntuas.inboundgateway.telegram.bot.InboundGatewayTelegramBot;
+import com.nt.ntuas.inboundgateway.telegram.api.TelegramBotProductServiceController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,7 +31,7 @@ public class TelegramBotConfiguration {
     }
 
     @Bean
-    public BotSession inboundGatewayTelegramBotSession(InboundGatewayTelegramBot bot) {
+    public BotSession inboundGatewayTelegramBotSession(TelegramBotProductServiceController bot) {
         BotSession session = new DefaultBotSession();
         session.setToken(bot.getBotToken());
         session.setOptions(bot.getOptions());

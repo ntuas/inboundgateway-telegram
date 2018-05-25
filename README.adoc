@@ -112,6 +112,14 @@ Environment variables are set with the Heroku cli. To act as the telegram bot, t
 
 [title=Shell]
 ----
+heroku config:set INBOUNDGATEWAY_TELEGRAM_BOT_APIBASEURL=https://api.telegram.org/bot
 heroku config:set INBOUNDGATEWAY_TELEGRAM_BOT_USERNAME=<username>
 heroku config:set INBOUNDGATEWAY_TELEGRAM_BOT_TOKEN=<token>
+----
+
+=== Attach App to RabbitMQ Add-On
+
+[title=Shell]
+----
+heroku addons:attach --as=CLOUDAMQP cloudamqp-globular-68797
 ----

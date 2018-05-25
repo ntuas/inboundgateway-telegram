@@ -1,5 +1,8 @@
-package com.nt.ntuas.inboundgateway.telegram.bot;
+package com.nt.ntuas.inboundgateway.telegram.api;
 
+import com.nt.ntuas.inboundgateway.telegram.api.model.Command;
+import com.nt.ntuas.inboundgateway.telegram.api.model.TelegramBotCommandParser;
+import com.nt.ntuas.inboundgateway.telegram.boundary.ProductBoundaryService;
 import com.nt.ntuas.inboundgateway.telegram.config.TelegramBotProperties;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,17 +16,27 @@ import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
+import static java.lang.String.format;
+
 @Component
-public class InboundGatewayTelegramBot extends TelegramLongPollingBot {
+public class TelegramBotProductServiceController extends TelegramLongPollingBot {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(InboundGatewayTelegramBot.class);
+    private static final Logger LOGGER = LoggerFactory.getLogger(TelegramBotProductServiceController.class);
 
-    private TelegramBotProperties telegramBotProperties;
+    private final TelegramBotProperties telegramBotProperties;
+
+    private final ProductBoundaryService productBoundaryService;
+
+    private final TelegramBotCommandParser commandParser;
 
     @Autowired
-    public InboundGatewayTelegramBot(TelegramBotProperties telegramBotProperties) {
+    public TelegramBotProductServiceController(TelegramBotProperties telegramBotProperties,
+                                               ProductBoundaryService productBoundaryService,
+                                               TelegramBotCommandParser commandParser) {
         super(botOptionsOf(telegramBotProperties));
         this.telegramBotProperties = telegramBotProperties;
+        this.productBoundaryService = productBoundaryService;
+        this.commandParser = commandParser;
     }
 
     private static DefaultBotOptions botOptionsOf(TelegramBotProperties telegramBotProperties) {
@@ -56,7 +69,26 @@ public class InboundGatewayTelegramBot extends TelegramLongPollingBot {
 
     private void handleIncomingMessage(Message message) throws TelegramApiException {
         LOGGER.info("Received message from chat " + message.getChatId() + " and user " + message.getFrom().getUserName() + ": " + message.getText());
-        sendMessage(message.getChatId(), message.getMessageId(), "You said: " + message.getText(), null);
+        Command command = commandParser.parse(message.getText());
+        if ("put".equalsIgnoreCase(command.getAction())) {
+            productBoundaryService.putProduct(command.getArgument());
+            confirmMessage(message, format("put product %s", command.getArgument()));
+        } else if ("take".equalsIgnoreCase(command.getAction())) {
+            productBoundaryService.takeProduct(command.getArgument());
+            confirmMessage(message, format("take product %s", command.getArgument()));
+        } else if ("order".equalsIgnoreCase(command.getAction())) {
+            productBoundaryService.orderProducts();
+            confirmMessage(message, "order all products");
+        } else {
+            confirmMessage(message, "Use one of the following commands:\n" +
+                    "/put <product>\n" +
+                    "/take <product>\n" +
+                    "/order");
+        }
+    }
+
+    private void confirmMessage(Message message, String text) throws TelegramApiException {
+        sendMessage(message.getChatId(), message.getMessageId(), text, null);
     }
 
     private void sendMessage(Long chatId, Integer messageId, String text, ReplyKeyboard replyKeyboard) throws TelegramApiException {

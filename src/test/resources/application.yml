@@ -1,9 +1,3 @@
-inboundgateway:
-  telegram:
-    bot:
-      username: NtuasBot
-      token: test
-
 management:
   endpoints:
     enabled-by-default: false
@@ -14,3 +8,12 @@ management:
       enabled: true
     health:
       enabled: true
+
+inboundgateway:
+  telegram:
+    bot:
+      username: NtuasBot
+      token: test
+  backend:
+    product:
+      queue: products.manage.queue
