@@ -79,11 +79,15 @@ public class TelegramBotProductServiceController extends TelegramLongPollingBot 
         } else if ("order".equalsIgnoreCase(command.getAction())) {
             productBoundaryService.orderProducts();
             confirmMessage(message, "order all products");
+        } else if ("count".equalsIgnoreCase(command.getAction())) {
+            String count = productBoundaryService.countProduct(command.getArgument());
+            confirmMessage(message, format("amount of available pieces of product %s is %s", command.getArgument(), count));
         } else {
             confirmMessage(message, "Use one of the following commands:\n" +
                     "/put <product>\n" +
                     "/take <product>\n" +
-                    "/order");
+                    "/order\n" +
+                    "/count <product>");
         }
     }
 
