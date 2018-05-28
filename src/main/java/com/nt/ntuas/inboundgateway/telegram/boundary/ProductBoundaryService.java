@@ -1,13 +1,28 @@
 package com.nt.ntuas.inboundgateway.telegram.boundary;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.commons.lang3.tuple.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.amqp.core.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
+import org.springframework.util.concurrent.ListenableFuture;
 
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ExecutionException;
+import java.util.stream.Collectors;
+
+import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.toSet;
 
 @Component
 public class ProductBoundaryService {
@@ -15,12 +30,14 @@ public class ProductBoundaryService {
     private static final Logger LOGGER = LoggerFactory.getLogger(ProductBoundaryService.class);
 
     private final AmqpTemplate amqpTemplate;
+    private final AsyncAmqpTemplate asyncAmqpTemplate;
 
     private final Queue productQueue;
 
     @Autowired
-    public ProductBoundaryService(AmqpTemplate amqpTemplate, Queue productQueue) {
+    public ProductBoundaryService(AmqpTemplate amqpTemplate, AsyncAmqpTemplate asyncAmqpTemplate, Queue productQueue) {
         this.amqpTemplate = amqpTemplate;
+        this.asyncAmqpTemplate = asyncAmqpTemplate;
         this.productQueue = productQueue;
     }
 
@@ -39,26 +56,85 @@ public class ProductBoundaryService {
         sendRequest("order", "");
     }
 
-    public String countProduct(String product) {
-        String response = sendAndReceive("count", product);
-        LOGGER.info("Queried amount of available pieces of product " + product + ": " + response);
-        return response;
+    public Map<String, Integer> countProducts() {
+        Map<String, Object> response = sendAndReceive("count", "");
+        LOGGER.info("Queried amount of available pieces: " + response);
+        return response.entrySet().stream()
+                .map(entry -> Pair.of(entry.getKey(), Integer.valueOf(entry.getValue().toString())))
+                .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+    }
+
+    public int countProduct(String product) {
+        Map<String, Object> response = sendAndReceive("count", product);
+        LOGGER.info("Queried amount of available pieces: " + response);
+        return Optional.ofNullable(response.get(product)).map(Object::toString).map(Integer::valueOf).orElse(0);
+    }
+
+    public CompletableFuture<Map<String, Integer>> countAsync(Set<String> products) {
+        if(products.isEmpty()) {
+            LOGGER.info("Query amount of available pieces of all products");
+            return sendAndReceiveAsync("count", "").thenApply(this::asIntegerValueMap);
+        }
+        LOGGER.info("Query amount of available pieces of products: " + products);
+        Set<CompletableFuture<Map<String, Integer>>> results = products.stream()
+                .map(product -> sendAndReceiveAsync("count", product))
+                .map(f -> f.thenApply(this::asIntegerValueMap))
+                .collect(toSet());
+        return CompletableFuture.supplyAsync(() -> results.stream()
+                .<Map<String, Integer>>map(f -> {
+                    try {
+                        return f.get();
+                    } catch (InterruptedException | ExecutionException e) {
+                        LOGGER.warn(e.getMessage(), e);
+                        return new HashMap<>();
+                    }
+                })
+                .flatMap(m -> m.entrySet().stream())
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
     private void sendRequest(String action, String body) {
         amqpTemplate.send(productQueue.getName(), createMessage(action, body));
     }
 
-    private String sendAndReceive(String action, String body) {
+    private Map<String, Object> sendAndReceive(String action, String body) {
         Message response = amqpTemplate.sendAndReceive(productQueue.getName(), createMessage(action, body));
-        return new String(response.getBody(), UTF_8);
+        if(response == null) {
+            return new HashMap<>();
+        }
+        try {
+            return new ObjectMapper().readValue(new String(response.getBody(), UTF_8), new TypeReference<Map<String, Object>>(){});
+        } catch (IOException e) {
+            LOGGER.warn(format("Could not deserialize message of response with correlation id %s.", response.getMessageProperties().getCorrelationId()), e);
+            return new HashMap<>();
+        }
+    }
+
+    private CompletableFuture<Map<String, Object>> sendAndReceiveAsync(String action, String body) {
+        ListenableFuture<Message> resultFuture = asyncAmqpTemplate.sendAndReceive(productQueue.getName(), createMessage(action, body));
+        return resultFuture.completable().thenApplyAsync(this::toMap);
     }
 
     private Message createMessage(String action, String body) {
-        return MessageBuilder.withBody(body.getBytes())
+        return MessageBuilder.withBody(body.getBytes(UTF_8))
                 .andProperties(MessagePropertiesBuilder.newInstance()
                         .setCorrelationId(randomUUID().toString())
                         .setHeader("action", action).build())
                 .build();
+    }
+
+    private Map<String, Object> toMap(Message message) {
+        try {
+            return new ObjectMapper().readValue(new String(message.getBody(), UTF_8), new TypeReference<Map<String, Object>>(){});
+        } catch (IOException e) {
+            LOGGER.warn(format("Could not deserialize message of response with correlation id %s.", message.getMessageProperties().getCorrelationId()), e);
+            return new HashMap<>();
+        }
+    }
+
+    private Map<String, Integer> asIntegerValueMap(Map<String, Object> source) {
+        return source.entrySet().stream()
+                .map(entry -> Pair.of(entry.getKey(), Integer.valueOf(entry.getValue().toString())))
+                .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
     }
 }

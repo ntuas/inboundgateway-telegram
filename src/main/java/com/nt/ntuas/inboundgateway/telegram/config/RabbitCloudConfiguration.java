@@ -8,7 +8,7 @@ import org.springframework.context.annotation.Profile;
 
 @Configuration
 @Profile("cloud")
-public class AmqpCloudConfiguration extends AbstractCloudConfig {
+public class RabbitCloudConfiguration extends AbstractCloudConfig {
 
     @Bean
     public ConnectionFactory rabbitFactory() {

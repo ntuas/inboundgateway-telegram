@@ -16,7 +16,12 @@ import org.telegram.telegrambots.bots.DefaultBotOptions;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.exceptions.TelegramApiException;
 
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+
 import static java.lang.String.format;
+import static java.util.Arrays.stream;
+import static java.util.stream.Collectors.toSet;
 
 @Component
 public class TelegramBotProductServiceController extends TelegramLongPollingBot {
@@ -80,8 +85,17 @@ public class TelegramBotProductServiceController extends TelegramLongPollingBot 
             productBoundaryService.orderProducts();
             confirmMessage(message, "order all products");
         } else if ("count".equalsIgnoreCase(command.getAction())) {
-            String count = productBoundaryService.countProduct(command.getArgument());
-            confirmMessage(message, format("amount of available pieces of product %s is %s", command.getArgument(), count));
+            //int count = productBoundaryService.countProduct(command.getArgument());
+            //confirmMessage(message, format("amount of available pieces of product %s is %d", command.getArgument(), count));
+            CompletableFuture<Map<String, Integer>> resultFuture = productBoundaryService.countAsync(stream(command.getArgument().split(" ")).collect(toSet()));
+            resultFuture.thenAcceptAsync(map -> {
+                LOGGER.info(String.format("Received response for chat id %s and user %s: %s", message.getChatId(), message.getFrom().getUserName(), map));
+                try {
+                    confirmMessage(message, String.valueOf(map));
+                } catch (TelegramApiException e) {
+                    LOGGER.warn(String.format("Could not send response to chat id %s and user %s", message.getChatId(), message.getFrom().getUserName()), e);
+                }
+            });
         } else {
             confirmMessage(message, "Use one of the following commands:\n" +
                     "/put <product>\n" +
