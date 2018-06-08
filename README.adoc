@@ -123,3 +123,39 @@ heroku config:set INBOUNDGATEWAY_TELEGRAM_BOT_TOKEN=<token>
 ----
 heroku addons:attach --as=CLOUDAMQP cloudamqp-globular-68797
 ----
+
+== Run locally
+
+----
+INBOUNDGATEWAY_TELEGRAM_BOT_TOKEN=<TOKEN> INBOUNDGATEWAY_TELEGRAM_BOT_USERNAME=<USER> heroku local
+----
+
+== ToDo
+
+=== Improve Scalability
+
+Currently, the app cannot be scaled by starting additional processes, like proposed by the 12 factor app manifesto.
+The reason for that is, that the used Telegram method to pull updates cannot be executet in parallel.
+In order to improve scalability the Telegram Webhook API should be used. With this we move from a pull- to a push-based approach.
+
+----
+                                                    -----------------------------
+                                                --> | Telegram InboundGateway 1 |
+                                              --    -----------------------------
+-------------------              ---------- --
+| Telegram Server | ---push----> | App LB |
+-------------------              ---------- --
+                                              --    -----------------------------
+                                                --> | Telegram InboundGateway 2 |
+                                                    -----------------------------
+----
+
+=== Improve Fault Tolerance
+
+If a request has been accepted it should be guaranteed delivered to the backend. The same is true for the response.
+However, in the current implementation, it is possible that a response is never supplied to the client.
+This can happen, if the backend takes to long, or this App crashes during waiting for or processing of the response.
+
+The reason for this is, that a temporary queue is used for the response.
+
+In order to ensure that every response is delivered, a distinct response queue should be used.
