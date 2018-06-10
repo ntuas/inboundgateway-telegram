@@ -32,8 +32,9 @@ dependencies {
 	compile('org.springframework.boot:spring-boot-starter-logging')
 	compile('org.springframework.cloud:spring-cloud-spring-service-connector')
 	compile('org.springframework.cloud:spring-cloud-heroku-connector')
-	compile('org.springframework.cloud:spring-cloud-localconfig-connector')
 	compile('org.hibernate.validator:hibernate-validator:6.0.9.Final')
+	compile('org.apache.commons:commons-lang3:3.7')
+
 
 	testCompile('org.springframework.boot:spring-boot-starter-test')
 }

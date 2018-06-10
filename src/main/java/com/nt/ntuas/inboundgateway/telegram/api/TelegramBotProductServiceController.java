@@ -85,8 +85,6 @@ public class TelegramBotProductServiceController extends TelegramLongPollingBot 
             productBoundaryService.orderProducts();
             confirmMessage(message, "order all products");
         } else if ("count".equalsIgnoreCase(command.getAction())) {
-            //int count = productBoundaryService.countProduct(command.getArgument());
-            //confirmMessage(message, format("amount of available pieces of product %s is %d", command.getArgument(), count));
             CompletableFuture<Map<String, Integer>> resultFuture = productBoundaryService.countAsync(stream(command.getArgument().split(" ")).collect(toSet()));
             resultFuture.thenAcceptAsync(map -> {
                 LOGGER.info(String.format("Received response for chat id %s and user %s: %s", message.getChatId(), message.getFrom().getUserName(), map));
@@ -101,6 +99,7 @@ public class TelegramBotProductServiceController extends TelegramLongPollingBot 
                     "/put <product>\n" +
                     "/take <product>\n" +
                     "/order\n" +
+                    "/count\n" +
                     "/count <product>");
         }
     }

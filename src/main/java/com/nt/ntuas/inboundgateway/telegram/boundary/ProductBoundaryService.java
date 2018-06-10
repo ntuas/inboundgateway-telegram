@@ -13,15 +13,14 @@ import org.springframework.util.concurrent.ListenableFuture;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutionException;
-import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.UUID.randomUUID;
+import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toSet;
 
 @Component
@@ -56,20 +55,6 @@ public class ProductBoundaryService {
         sendRequest("order", "");
     }
 
-    public Map<String, Integer> countProducts() {
-        Map<String, Object> response = sendAndReceive("count", "");
-        LOGGER.info("Queried amount of available pieces: " + response);
-        return response.entrySet().stream()
-                .map(entry -> Pair.of(entry.getKey(), Integer.valueOf(entry.getValue().toString())))
-                .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
-    }
-
-    public int countProduct(String product) {
-        Map<String, Object> response = sendAndReceive("count", product);
-        LOGGER.info("Queried amount of available pieces: " + response);
-        return Optional.ofNullable(response.get(product)).map(Object::toString).map(Integer::valueOf).orElse(0);
-    }
-
     public CompletableFuture<Map<String, Integer>> countAsync(Set<String> products) {
         if(products.isEmpty()) {
             LOGGER.info("Query amount of available pieces of all products");
@@ -90,29 +75,16 @@ public class ProductBoundaryService {
                     }
                 })
                 .flatMap(m -> m.entrySet().stream())
-                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue)));
+                .collect(toMap(Map.Entry::getKey, Map.Entry::getValue)));
     }
 
     private void sendRequest(String action, String body) {
         amqpTemplate.send(productQueue.getName(), createMessage(action, body));
     }
 
-    private Map<String, Object> sendAndReceive(String action, String body) {
-        Message response = amqpTemplate.sendAndReceive(productQueue.getName(), createMessage(action, body));
-        if(response == null) {
-            return new HashMap<>();
-        }
-        try {
-            return new ObjectMapper().readValue(new String(response.getBody(), UTF_8), new TypeReference<Map<String, Object>>(){});
-        } catch (IOException e) {
-            LOGGER.warn(format("Could not deserialize message of response with correlation id %s.", response.getMessageProperties().getCorrelationId()), e);
-            return new HashMap<>();
-        }
-    }
-
     private CompletableFuture<Map<String, Object>> sendAndReceiveAsync(String action, String body) {
         ListenableFuture<Message> resultFuture = asyncAmqpTemplate.sendAndReceive(productQueue.getName(), createMessage(action, body));
-        return resultFuture.completable().thenApplyAsync(this::toMap);
+        return resultFuture.completable().thenApplyAsync(this::messageToMap);
     }
 
     private Message createMessage(String action, String body) {
@@ -123,7 +95,7 @@ public class ProductBoundaryService {
                 .build();
     }
 
-    private Map<String, Object> toMap(Message message) {
+    private Map<String, Object> messageToMap(Message message) {
         try {
             return new ObjectMapper().readValue(new String(message.getBody(), UTF_8), new TypeReference<Map<String, Object>>(){});
         } catch (IOException e) {
@@ -135,6 +107,6 @@ public class ProductBoundaryService {
     private Map<String, Integer> asIntegerValueMap(Map<String, Object> source) {
         return source.entrySet().stream()
                 .map(entry -> Pair.of(entry.getKey(), Integer.valueOf(entry.getValue().toString())))
-                .collect(Collectors.toMap(Pair::getKey, Pair::getValue));
+                .collect(toMap(Pair::getKey, Pair::getValue));
     }
 }
